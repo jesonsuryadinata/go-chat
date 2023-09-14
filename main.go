@@ -136,6 +136,7 @@ func main() {
 		if err := RegisterUser(requestData.Username, requestData.Password); err != nil {
 			return err
 		}
+
 		return c.JSON(fiber.Map{"message": "User registered successfully"})
 	})
 
@@ -159,6 +160,10 @@ func main() {
 				return err
 			}
 		}
+
+		// getId, ok := GetUserIdByUsername(requestData.Username)
+		// fmt.Printf("userId on login : %d | ok : %s\n", getId, ok)
+
 		fmt.Println("Login : success")
 		return c.JSON(fiber.Map{"message": "Login successful", "username": authenticatedUser})
 	})

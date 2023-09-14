@@ -21,7 +21,7 @@ func RegisterUser(username, password string) error {
 	if count > 0 {
 		// User already exists
 		fmt.Println("User already exists")
-		return fmt.Errorf("Username %s has already been used", username)
+		return fmt.Errorf("Username has already been used", username)
 	}
 
 	hashedPassword, err := HashPassword(password)
@@ -41,6 +41,24 @@ func RegisterUser(username, password string) error {
 		fmt.Println("Error while inserting user")
 		return err
 	}
+
+	userId, err := GetUserIdByUsername(username)
+	if err != nil {
+		fmt.Errorf("Error on GetUserIdByUsername (users.RegisterUser)")
+		return err
+	}
+
+	addToGlobal, err := AddUserIntoChannel(int64(userId), 1)
+	if err != nil {
+		fmt.Errorf("Error on AddUserIntoChannel(users.RegisterUser)")
+	}
+	fmt.Println(addToGlobal)
+
+	addUserChannel, err := AddUserChannelRelation(int64(userId), 1, "member")
+	if err != nil {
+		fmt.Errorf("Error on AddUserChannelRelation(users.RegisterUser)")
+	}
+	fmt.Println(addUserChannel)
 
 	fmt.Printf("Username [ %s ] registered.\n", username)
 	return nil
@@ -97,20 +115,20 @@ func AuthenticateUser(username, password string) (string, error) {
 	return username, nil
 }
 
-func GetUserIdByUsername(username string) (string, error) {
+func GetUserIdByUsername(username string) (int64, error) {
 	var user bson.M
 	filter := bson.M{"username": username}
 	err := usersCollection.FindOne(context.TODO(), filter).Decode(&user)
 	if err != nil {
 		if err == mongo.ErrNoDocuments {
 			fmt.Printf("GetUserIdByUsername : Error user not found. Input: [Username : %s]\n", username)
-			return "", fmt.Errorf("User %s is not found", username)
+			return 0, fmt.Errorf("User %s is not found", username)
 		}
 		fmt.Println("GetUserIdByUsername : Error while retrieving user from db")
-		return "", err
+		return 0, err
 	}
-	userId, ok := user["userId"].(string)
+	userId, ok := user["userId"].(int64)
 
-	fmt.Printf("GetUserIdByUsername : %s | ok : %t", userId, ok)
+	fmt.Printf("GetUserIdByUsername : %d | ok : %t\n", userId, ok)
 	return userId, nil
 }
